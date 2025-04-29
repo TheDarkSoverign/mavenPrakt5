@@ -1,7 +1,8 @@
 package org.example;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.sql.*;
-import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,13 +11,12 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.pow;
 
 
 public class Main {
     protected static Scanner sc = new Scanner(System.in);
     protected static Connection con;
-    protected static String table = "task1";
+    protected static String table = "task5";
 
     static String Url = "jdbc:postgresql://localhost:5432/postgres";
 
@@ -27,11 +27,10 @@ public class Main {
             System.out.println("Не удалось подключиться к базе данных: " + e.getMessage());
         }
 
-        String query = "CREATE TABLE IF NOT EXISTS task1 (id SERIAL, sum INT, sub INT, mul INT, div INT, mod INT, abs_1 INT, abs_2 INT, pow INT)";
+        String query = "CREATE TABLE IF NOT EXISTS " + table + " (id SERIAL, str1 VARCHAR(255), str2 VARCHAR(255), rev1 VARCHAR(255), rev2 VARCHAR(255), concat VARCHAR(255))";
         try {
             Statement st = con.createStatement();
             st.executeUpdate(query);
-            table = "task1";
             System.out.println("Используется таблица по умолчанию - " + table);
         } catch (SQLException e) {
             System.out.println("Не удалось использовать таблицу по умолчанию, " + e.getMessage());
@@ -47,15 +46,11 @@ public class Main {
             System.out.println("Меню программы:");
             System.out.println("1. Вывести все таблицы.");
             System.out.println("2. Создать/выбрать таблицу.");
-            System.out.println("3. Cложение двух чисел.");
-            System.out.println("4. Разность двух чисел");
-            System.out.println("5. Умножение двух чисел");
-            System.out.println("6. Деление двух чисел");
-            System.out.println("7. Деление по модулю двух чисел");
-            System.out.println("8. Модуль двух чисел");
-            System.out.println("9. Число в степени другого числа");
-            System.out.println("10. Записать результаты в таблицу");
-            System.out.println("11. Записать данные в Excel");
+            System.out.println("3. Ввести две строки.");
+            System.out.println("4. Поменять порядок символов строки на обратный.");
+            System.out.println("5. Соединить строки.");
+            System.out.println("6. Записать результаты в таблицу");
+            System.out.println("7. Записать данные в Excel");
             System.out.println("0. Выход");
             System.out.print("Выберите пункт меню: ");
             s = sc.nextLine();
@@ -70,12 +65,8 @@ public class Main {
                 case 3 -> tasks.task3();
                 case 4 -> tasks.task4();
                 case 5 -> tasks.task5();
-                case 6 -> tasks.task6();
-                case 7 -> tasks.task7();
-                case 8 -> tasks.task8();
-                case 9 -> tasks.task9();
-                case 10 -> tasks.insertData();
-                case 11 -> {
+                case 6 -> tasks.insertData();
+                case 7  -> {
                     System.out.print("Введите название файла: ");
                     String filepath = sc.nextLine();
 
@@ -99,17 +90,15 @@ public class Main {
 }
 
 class Task extends Main {
-    static int firstNum;
-    static int secondNum;
+    static String str1;
+    static String str2;
 
-    static Object sum = null;
-    static Object sub = null;
-    static Object mul = null;
-    static Object div = null;
-    static Object mod = null;
-    static Object abs_1 = null;
-    static Object abs_2 = null;
-    static Object pow = null;
+    static StringBuffer sb1 = new StringBuffer();
+    static StringBuffer sb2 = new StringBuffer();
+
+    static Object rev1 = null;
+    static Object rev2 = null;
+    static Object concat = null;
 
     public void task1() {
         String query = "SELECT table_name AS Названия_таблиц FROM information_schema.tables WHERE table_schema = 'public'";
@@ -133,7 +122,7 @@ class Task extends Main {
     public void task2() {
         System.out.print("Введите название таблицы: ");
         table = sc.next();
-        String query = "CREATE TABLE IF NOT EXISTS " + table + " (id SERIAL, sum INT, sub INT, mul INT, div INT, mod INT, abs_1 INT, abs_2 INT, pow INT)";
+        String query = "CREATE TABLE IF NOT EXISTS " + table + " (id SERIAL, str1 VARCHAR(255), str2 VARCHAR(255), rev1 VARCHAR(255), rev2 VARCHAR(255), concat VARCHAR(255))";
         try {
             Statement st = con.createStatement();
             st.executeUpdate(query);
@@ -145,76 +134,36 @@ class Task extends Main {
     }
 
     public void task3() {
-        inputFirstNum();
-        inputSecondNum();
+        inputFirstStr();
+        inputSecondStr();
 
-        sum = firstNum + secondNum;
-        System.out.println("Сумма чисел: " + sum);
+        System.out.println("Строка 1: " + inputFirstStr().toString());
+        System.out.println("Строка 2: " + sb2.toString());
     }
 
 
     public void task4() {
-        inputFirstNum();
-        inputSecondNum();
+        inputFirstStr();
+        inputSecondStr();
 
-        sub = firstNum - secondNum;
-        System.out.println("Разность чисел: " + sub);
+        //rev2 = str1 - str2;
+        System.out.println("Разность чисел: " + rev2);
     }
 
     public void task5() {
-        inputFirstNum();
-        inputSecondNum();
+        inputFirstStr();
+        inputSecondStr();
 
-        mul = firstNum * secondNum;
-        System.out.println("Произведение чисел: " + mul);
-    }
-
-    public void task6() {
-        inputFirstNum();
-        inputSecondNum();
-
-        div = firstNum / secondNum;
-        System.out.println("Частное чисел: " + div);
-    }
-
-    public void task7() {
-        inputFirstNum();
-        inputSecondNum();
-
-        mod = firstNum % secondNum;
-        System.out.println("Остаток от деления чисел: " + mod);
-    }
-
-    public void task8() {
-        inputFirstNum();
-        inputSecondNum();
-
-        abs_1 = abs(firstNum);
-        System.out.println("Модуль первого числа: " + abs_1);
-
-        abs_2 = abs(secondNum);
-        System.out.println("Модуль второго числа: " + abs_2);
-    }
-
-    public void task9() {
-        inputFirstNum();
-        inputSecondNum();
-
-        pow = pow(firstNum, secondNum);
-        System.out.println("Число в степени: " + pow);
+        //concat = str1 * str2;
+        System.out.println("Произведение чисел: " + concat);
     }
 
     public void insertData() {
-        String query = "INSERT INTO " + table + " (sum, sub, mul, div, mod, abs_1, abs_2, pow) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String query = "INSERT INTO " + table + " (str1, str2, rev1, rev2, concat) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement pst = con.prepareStatement(query)) {
-            pst.setObject(1, sum);
-            pst.setObject(2, sub);
-            pst.setObject(3, mul);
-            pst.setObject(4, div);
-            pst.setObject(5, mod);
-            pst.setObject(6, abs_1);
-            pst.setObject(7, abs_2);
-            pst.setObject(8, pow);
+            pst.setObject(1, rev1);
+            pst.setObject(2, rev2);
+            pst.setObject(3, concat);
             pst.executeUpdate();
             System.out.println("Все выполненные результаты добавлены в таблицу!");
         } catch (
@@ -223,28 +172,17 @@ class Task extends Main {
         }
     }
 
-    public void inputFirstNum() {
-        try {
-            System.out.print("Введите первое число: ");
-            String s = sc.next();
-            firstNum = Integer.parseInt(s);
-            System.out.println();
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный формат ввода");
-            inputFirstNum();
+    public StringBuffer inputFirstStr() {
+        System.out.println("Введите первую строку (минимум 50 символов): ");
+        if (sb1.append(sc.nextLine()).length() < 50) {
+            System.out.println("Длина строки меньше 50 символов!");
         }
+        return sb1;
     }
 
-    public void inputSecondNum() {
-        try {
-            System.out.print("Введите второе число: ");
-            String s = sc.next();
-            secondNum = Integer.parseInt(s);
-            System.out.println();
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный формат ввода");
-            inputSecondNum();
-        }
+
+    public void inputSecondStr() {
+
     }
 }
 
