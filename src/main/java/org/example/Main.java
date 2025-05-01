@@ -1,17 +1,13 @@
 package org.example;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.sql.*;
 import java.util.Scanner;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
-import static java.lang.Math.abs;
-
 
 public class Main {
     protected static Scanner sc = new Scanner(System.in);
@@ -46,8 +42,8 @@ public class Main {
             System.out.println("Меню программы:");
             System.out.println("1. Вывести все таблицы.");
             System.out.println("2. Создать/выбрать таблицу.");
-            System.out.println("3. Ввести две строки.");
-            System.out.println("4. Поменять порядок символов строки на обратный.");
+            System.out.println("3. Ввести две строки (минимум 50 символов).");
+            System.out.println("4. Поменять порядок символов строк на обратный.");
             System.out.println("5. Соединить строки.");
             System.out.println("6. Записать результаты в таблицу");
             System.out.println("7. Записать данные в Excel");
@@ -66,7 +62,7 @@ public class Main {
                 case 4 -> tasks.task4();
                 case 5 -> tasks.task5();
                 case 6 -> tasks.insertData();
-                case 7  -> {
+                case 7 -> {
                     System.out.print("Введите название файла: ");
                     String filepath = sc.nextLine();
 
@@ -90,15 +86,13 @@ public class Main {
 }
 
 class Task extends Main {
-    static String str1;
-    static String str2;
-
     static StringBuffer sb1 = new StringBuffer();
     static StringBuffer sb2 = new StringBuffer();
 
-    static Object rev1 = null;
-    static Object rev2 = null;
-    static Object concat = null;
+    static StringBuffer rev1 = new StringBuffer();
+    static StringBuffer rev2 = new StringBuffer();
+
+    static StringBuffer concat = new StringBuffer();
 
     public void task1() {
         String query = "SELECT table_name AS Названия_таблиц FROM information_schema.tables WHERE table_schema = 'public'";
@@ -121,7 +115,7 @@ class Task extends Main {
 
     public void task2() {
         System.out.print("Введите название таблицы: ");
-        table = sc.next();
+        table = sc.nextLine();
         String query = "CREATE TABLE IF NOT EXISTS " + table + " (id SERIAL, str1 VARCHAR(255), str2 VARCHAR(255), rev1 VARCHAR(255), rev2 VARCHAR(255), concat VARCHAR(255))";
         try {
             Statement st = con.createStatement();
@@ -134,36 +128,39 @@ class Task extends Main {
     }
 
     public void task3() {
-        inputFirstStr();
-        inputSecondStr();
-
-        System.out.println("Строка 1: " + inputFirstStr().toString());
-        System.out.println("Строка 2: " + sb2.toString());
+        System.out.println(inputFirstStr().toString());
+        System.out.println("Сохранили строку.");
+        System.out.println(inputSecondStr().toString());
+        System.out.println("Сохранили строку.");
     }
 
-
     public void task4() {
-        inputFirstStr();
-        inputSecondStr();
+        rev1 = new StringBuffer(sb1.reverse());
+        System.out.println("Перевернутая первая строка:");
+        System.out.println(rev1.toString());
+        sb1.reverse();
 
-        //rev2 = str1 - str2;
-        System.out.println("Разность чисел: " + rev2);
+        rev2 = new StringBuffer(sb2.reverse());
+        System.out.println("Перевернутая вторая строка:");
+        System.out.println(rev2.toString());
+        sb2.reverse();
     }
 
     public void task5() {
-        inputFirstStr();
-        inputSecondStr();
-
-        //concat = str1 * str2;
-        System.out.println("Произведение чисел: " + concat);
+        concat = new StringBuffer(sb1.append(sb2));
+        System.out.println("Соединенная строка:");
+        System.out.println(concat.toString());
+        sb1.delete(sb2.length(), sb1.length());
     }
 
     public void insertData() {
         String query = "INSERT INTO " + table + " (str1, str2, rev1, rev2, concat) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement pst = con.prepareStatement(query)) {
-            pst.setObject(1, rev1);
-            pst.setObject(2, rev2);
-            pst.setObject(3, concat);
+            pst.setObject(1, sb1.toString());
+            pst.setObject(2, sb2.toString());
+            pst.setObject(3, rev1.toString());
+            pst.setObject(4, rev2.toString());
+            pst.setObject(5, concat.toString());
             pst.executeUpdate();
             System.out.println("Все выполненные результаты добавлены в таблицу!");
         } catch (
@@ -173,16 +170,27 @@ class Task extends Main {
     }
 
     public StringBuffer inputFirstStr() {
-        System.out.println("Введите первую строку (минимум 50 символов): ");
-        if (sb1.append(sc.nextLine()).length() < 50) {
-            System.out.println("Длина строки меньше 50 символов!");
-        }
-        return sb1;
+        sb1.delete(0, sb1.length());
+        System.out.println("Введите первую строку!");
+        return getStringBuffer(sb1);
     }
 
 
-    public void inputSecondStr() {
+    public StringBuffer inputSecondStr() {
+        sb2.delete(0, sb2.length());
+        System.out.println("Введите вторую строку!");
+        return getStringBuffer(sb2);
+    }
 
+    private StringBuffer getStringBuffer(StringBuffer sb) {
+        while (sb.length() < 50) {
+            sb.delete(0, sb.length());
+            System.out.println("v".repeat(50));
+            if (sb.append(sc.nextLine()).length() < 50) {
+                System.out.println("Длина строки меньше 50 символов!");
+            }
+        }
+        return sb;
     }
 }
 
@@ -203,22 +211,16 @@ class ExportToExcel extends Main {
             row.createCell(3).setCellValue(rs.getMetaData().getColumnName(4));
             row.createCell(4).setCellValue(rs.getMetaData().getColumnName(5));
             row.createCell(5).setCellValue(rs.getMetaData().getColumnName(6));
-            row.createCell(6).setCellValue(rs.getMetaData().getColumnName(7));
-            row.createCell(7).setCellValue(rs.getMetaData().getColumnName(8));
-            row.createCell(8).setCellValue(rs.getMetaData().getColumnName(9));
 
             int rowIndex = 1;
             while (rs.next()) {
                 Row row1 = sheet.createRow(rowIndex++);
                 row1.createCell(0).setCellValue(rs.getInt(1));
-                row1.createCell(1).setCellValue(rs.getInt(2));
-                row1.createCell(2).setCellValue(rs.getInt(3));
-                row1.createCell(3).setCellValue(rs.getInt(4));
-                row1.createCell(4).setCellValue(rs.getInt(5));
-                row1.createCell(5).setCellValue(rs.getInt(6));
-                row1.createCell(6).setCellValue(rs.getInt(7));
-                row1.createCell(7).setCellValue(rs.getInt(8));
-                row1.createCell(8).setCellValue(rs.getInt(9));
+                row1.createCell(1).setCellValue(rs.getString(2));
+                row1.createCell(2).setCellValue(rs.getString(3));
+                row1.createCell(3).setCellValue(rs.getString(4));
+                row1.createCell(4).setCellValue(rs.getString(5));
+                row1.createCell(5).setCellValue(rs.getString(6));
 
             }
             int columnCount = sheet.getRow(0).getPhysicalNumberOfCells();
